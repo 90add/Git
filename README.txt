@@ -1,190 +1,193 @@
 #include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
 #include <string.h>
-#include <ctype.h>
 #include <stdlib.h>
-// 加密函数
-void encrypt(char *password) {
-    int length = strlen(password);
-    
-    for (int i = 0; i < length; i++) {
-        // 将每个字符的ASCII码加上位置和偏移值
-        password[i] += (i + 1) + 3;
-    }
-    
-    // 调换第一位和最后一位
-    char temp = password[0];
-    password[0] = password[length - 1];
-    password[length - 1] = temp;
-    
-    // 反转字符串
-    int start = 0;
-    int end = length - 1;
-    
-    while (start < end) {
-        temp = password[start];
-        password[start] = password[end];
-        password[end] = temp;
-        start++;
-        end--;
-    }
+#include <ctype.h>
+
+#define MAX_STUDENTS 100
+#define MAX_NAME_LEN 50
+#define MAX_ID_LEN 20
+#define MAX_COURSE_LEN 50
+
+typedef struct {
+    char name[MAX_NAME_LEN];
+    char id[MAX_ID_LEN];
+    char course[MAX_COURSE_LEN];
+    float score;
+} Student;
+
+Student students[MAX_STUDENTS];
+int studentCount = 0;
+
+void displayMenu() {
+    printf("\n=================================\n");
+    printf("    欢迎使用学生成绩管理系统\n");
+    printf("=================================\n");
+    printf("1. 记录学生成绩\n");
+    printf("2. 查询学生成绩\n");
+    printf("3. 统计课程成绩\n");
+    printf("4. 退出系统\n");
+    printf("请输入选项序号：");
 }
 
-// 解密函数
-void decrypt(char *password) {
-    int length = strlen(password);
-    
-    // 反转字符串
-    int start = 0;
-    int end = length - 1;
-    
-    while (start < end) {
-        char temp = password[start];
-        password[start] = password[end];
-        password[end] = temp;
-        start++;
-        end--;
+void addStudent() {
+    if (studentCount >= MAX_STUDENTS) {
+        printf("错误：学生数量已达上限!\n");
+        return;
     }
-    
-    // 调换第一位和最后一位
-    char temp = password[0];
-    password[0] = password[length - 1];
-    password[length - 1] = temp;
-    
-    for (int i = 0; i < length; i++) {
-        // 将每个字符的ASCII码减去位置和偏移值
-        password[i] -= (i + 1) + 3;
-    }
-}
 
-// 密码强度评估函数
-int evaluatePasswordStrength(char *password) {
-    int length = strlen(password);
-    int hasDigit = 0;
-    int hasLower = 0;
-    int hasUpper = 0;
-    
-    if (length < 8) {
-        return 1; // 弱密码
-    }
-    
-    for (int i = 0; i < length; i++) {
-        if (isdigit(password[i])) {
-            hasDigit = 1;
-        } else if (islower(password[i])) {
-            hasLower = 1;
-        } else if (isupper(password[i])) {
-            hasUpper = 1;
-        }
-    }
-    
-    if (hasDigit && hasLower && hasUpper) {
-        return 3; // 强密码
-    } else if (hasDigit || hasLower || hasUpper) {
-        return 2; // 中等密码
-    } else {
-        return 1; // 弱密码
-    }
-}
+    Student newStudent;
+    char buffer[100];
 
-// 生成密码函数
-void generatePassword(char *password, int length) {
-    srand(time(NULL));
-    
-    for (int i = 0; i < length; i++) {
-        int type = rand() % 3; // 随机选择数字、小写字母或大写字母
+    printf("\n===== 记录学生成绩 =====\n");
+
+    printf("请输入学生姓名：");
+    fgets(newStudent.name, MAX_NAME_LEN, stdin);
+    newStudent.name[strcspn(newStudent.name, "\n")] = '\0';
+
+    do {
+        printf("请输入学生学号：");
+        fgets(buffer, MAX_ID_LEN, stdin);
+        buffer[strcspn(buffer, "\n")] = '\0';
         
-        if (type == 0) {
-            password[i] = '0' + rand() % 10; // 生成数字字符
-        } else if (type == 1) {
-            password[i] = 'a' + rand() % 26; // 生成小写字母字符
+        for (int i = 0; i < studentCount; i++) {
+            if (strcmp(students[i].id, buffer) == 0) {
+                printf("错误：学号已存在!\n");
+                buffer[0] = '\0';
+                break;
+            }
+        }
+    } while (buffer[0] == '\0');
+    strcpy(newStudent.id, buffer);
+
+    printf("请输入课程名称：");
+    fgets(newStudent.course, MAX_COURSE_LEN, stdin);
+    newStudent.course[strcspn(newStudent.course, "\n")] = '\0';
+
+    int valid = 0;
+    do {
+        printf("请输入成绩(0-100):");
+        fgets(buffer, sizeof(buffer), stdin);
+        if (sscanf(buffer, "%f", &newStudent.score) != 1) {
+            printf("错误：无效输入!\n");
+        } else if (newStudent.score < 0 || newStudent.score > 100) {
+            printf("错误：成绩超出范围!\n");
         } else {
-            password[i] = 'A' + rand() % 26; // 生成大写字母字符
+            valid = 1;
+        }
+    } while (!valid);
+
+    students[studentCount++] = newStudent;
+    printf("成绩已成功记录！\n");
+}
+
+void queryStudent() {
+    printf("\n===== 查询学生成绩 =====\n");
+    printf("1. 按姓名查询\n");
+    printf("2. 按学号查询\n");
+    printf("3. 按课程查询\n");
+    printf("请选择查询方式：");
+    
+    int choice;
+    char buffer[100];
+    fgets(buffer, sizeof(buffer), stdin);
+    sscanf(buffer, "%d", &choice);
+
+    printf("请输入查询内容：");
+    char keyword[100];
+    fgets(keyword, sizeof(keyword), stdin);
+    keyword[strcspn(keyword, "\n")] = '\0';
+
+    int found = 0;
+    for (int i = 0; i < studentCount; i++) {
+        int match = 0;
+        switch(choice) {
+            case 1: 
+                match = (strcmp(students[i].name, keyword) == 0);
+                break;
+            case 2:
+                match = (strcmp(students[i].id, keyword) == 0);
+                break;
+            case 3:
+                match = (strcmp(students[i].course, keyword) == 0);
+                break;
+            default:
+                printf("无效选项!\n");
+                return;
+        }
+        
+        if (match) {
+            printf("[记录%d] 姓名：%s 学号：%s\n  课程：%s 成绩：%.1f\n",
+                   found+1, students[i].name, students[i].id, 
+                   students[i].course, students[i].score);
+            found++;
         }
     }
     
-    password[length] = '\0'; // 添加字符串结束符
+    if (!found) printf("未找到相关记录!\n");
 }
 
-void printCentered(char *text, int width) {
-    int length = strlen(text);
-    int padding = (width - length) / 2;
+void statCourse() {
+    printf("\n===== 统计课程成绩 =====\n");
+    printf("请输入课程名称：");
+    char course[MAX_COURSE_LEN];
+    fgets(course, MAX_COURSE_LEN, stdin);
+    course[strcspn(course, "\n")] = '\0';
+
+    float sum = 0, max = -1, min = 101;
+    int count = 0;
     
-    for (int i = 0; i < padding; i++) {
-        printf(" ");
+    for (int i = 0; i < studentCount; i++) {
+        if (strcmp(students[i].course, course) == 0) {
+            sum += students[i].score;
+            count++;
+            if (students[i].score > max) max = students[i].score;
+            if (students[i].score < min) min = students[i].score;
+        }
     }
-    
-    printf("%s\n", text);
+
+    if (count == 0) {
+        printf("该课程无记录!\n");
+        return;
+    }
+
+    printf("课程：%s\n", course);
+    printf("平均分：%.2f  最高分：%.1f  最低分：%.1f\n", 
+           sum/count, max, min);
 }
 
 int main() {
-    int choice;
-    char password[17]; // 限定密码长度不超过17
-    int width = 125; // 设定输出宽度
-    printCentered("==============================", width); 
-    printCentered("欢迎使用密码管理系统", width);
-    printCentered("==============================", width);
-    printf("请选择操作：\n");
-    printf("1. 加密\n");
-    printf("2. 解密\n");
-    printf("3. 判断密码强度\n");
-    printf("4. 密码生成\n");
-    printf("请输入操作编号: ");
-    scanf("%d", &choice);
-    
-    switch (choice) {
-        case 1:
-            printf("请输入密码: ");
-            scanf("%s", password);
-            
-            encrypt(password);
-            printf("加密后的密码: %s\n", password);
-            break;
-        case 2:
-            printf("请输入密码: ");
-            scanf("%s", password);
-            
-            decrypt(password);
-            printf("解密后的密码: %s\n", password);
-            break;
-        case 3:
-            printf("请输入密码: ");
-            scanf("%s", password);
-            
-            int strength = evaluatePasswordStrength(password);
-            printf("密码强度: ");
-            
-            switch (strength) 
-            {
-                case 1:
-                    printf("弱\n");
-                    break;
-                case 2:
-                    printf("中等\n");
-                    break;
-                case 3:
-                    printf("强\n");
-                    break;
-                default:
-                    printf("未知\n");
-                    break;
-            }
-            break;
-                case 4:
-            printf("请输入要生成的密码长度: ");
-            int length;
-            scanf("%d", &length);
-            
-            char generatedPassword[length + 1]; // 生成的密码
-            
-            generatePassword(generatedPassword, length);
-            printf("生成的密码: %s\n", generatedPassword);
-            break;
-        default:
-            printf("无效的操作编号\n");
-            break;
-            }
+    int running = 1;
+    while(running) {
+        displayMenu();
+        
+        char input[10];
+        fgets(input, sizeof(input), stdin);
+        int choice;
+        if (sscanf(input, "%d", &choice) != 1) {
+            printf("错误：请输入数字选项!\n");
+            continue;
+        }
+
+        if (strchr(input, '\n') == NULL)
+            while(getchar() != '\n');
+
+        switch(choice) {
+            case 1: addStudent(); break;
+            case 2: queryStudent(); break;
+            case 3: statCourse(); break;
+            case 4: 
+                printf("\n感谢使用学生成绩管理系统,再见！\n");
+                running = 0;
+                break;
+            default:
+                printf("无效选项!\n");
+        }
+    }
+
+    /* 保持终端停留 */
+    printf("按回车键退出程序...");
+    while(getchar() != '\n');  // 清空缓冲区
+    getchar();                // 等待最终输入
     system("pause");
     return 0;
 }
